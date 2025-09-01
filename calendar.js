@@ -233,6 +233,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const breakTimes = [
+            { time: '08:15', label: 'Red Room Meeting' },
             { time: '09:00', label: 'Next Break In' },
             { time: '11:00', label: 'Lunch Break In' },
             { time: '14:00', label: 'Next Break In' },
