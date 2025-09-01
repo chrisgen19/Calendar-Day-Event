@@ -18,13 +18,13 @@
         .calendar-container {
             display: flex;
             flex-direction: column;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 2rem auto;
             background-color: white;
             border: 1px solid #e2e8f0;
             border-radius: 0.75rem;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            overflow: hidden;
+            /* overflow: hidden; <-- This was preventing sticky positioning */
         }
 
         /* Header */
@@ -74,12 +74,18 @@
             stroke-width: 2;
         }
         
-        /* Body */
+        /* Body Wrapper for Calendar + Widget */
+        .calendar-wrapper {
+            display: flex;
+        }
+
+        /* Main Calendar Body */
         .calendar-body {
             display: flex;
             flex-grow: 1;
             min-height: 80vh;
             position: relative;
+            padding-top: 0.75rem;
         }
         
         /* Timeline */
@@ -97,11 +103,11 @@
             border-left: 1px solid #e2e8f0;
             position: relative;
             cursor: pointer;
+            padding-right: 0.5rem;
         }
         .calendar-grid {
              background-image:
                 linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
-            /* Line every 60px (30 minutes * 2px/min) */
             background-size: 100% 60px;
         }
 
@@ -110,31 +116,25 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Allows clicks to pass through to the grid */
+            right: 0.5rem;
+            bottom: 0;
+            pointer-events: none;
         }
         .event-item {
             position: absolute;
             border-radius: 0.375rem;
-            padding: 0.25rem 0.5rem;
+            padding: 0.25rem 0rem 0.25rem 0.5rem;
             overflow: hidden;
             border-left: 4px solid;
             font-size: 0.8rem;
             z-index: 5;
             cursor: pointer;
-            pointer-events: auto; /* Re-enable pointer events for events themselves */
+            pointer-events: auto;
         }
-        .event-title {
-            font-weight: 600;
-            margin: 0;
-        }
-        .event-time {
-            opacity: 0.8;
-            margin: 0;
-        }
+        .event-title { font-weight: 600; margin: 0; }
+        .event-time { opacity: 0.8; margin: 0; }
         
-        /* Event Colors - Subtle Palette */
+        /* Event Colors */
         .event-blue { background-color: #dbeafe; border-color: #3b82f6; color: #1e40af; }
         .event-red { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
         .event-yellow { background-color: #fef9c3; border-color: #f59e0b; color: #854d0e; }
@@ -144,138 +144,74 @@
 
         /* Time Indicator */
         #current-time-indicator {
-            position: absolute;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            z-index: 20;
-            pointer-events: none;
+            position: absolute; width: 100%; display: flex; align-items: center; z-index: 20; pointer-events: none;
         }
         .time-indicator-dot {
-            width: 0.625rem;
-            height: 0.625rem;
-            background-color: #ef4444;
-            border-radius: 9999px;
-            margin-left: -5px;
-            z-index: 20;
+            width: 0.625rem; height: 0.625rem; background-color: #ef4444; border-radius: 9999px; margin-left: -5px; z-index: 20;
         }
-        .time-indicator-line {
-            width: 100%;
-            height: 2px;
-            background-color: #ef4444;
+        .time-indicator-line { width: 100%; height: 2px; background-color: #ef4444; }
+        
+        /* Widget Panel */
+        .widget-panel {
+            width: 280px;
+            border-left: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            /* Sticky position for the widget panel */
+            position: -webkit-sticky; /* For Safari */
+            position: sticky;
+            top: 2rem; /* Stick to the top, with padding */
+            align-self: flex-start; /* Prevent stretching in flex container */
+        }
+        .widget-box {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+        .widget-box h3 {
+            margin-top: 0;
+            font-size: 1rem;
+            color: #475569;
+            font-weight: 600;
+        }
+        .countdown-timer {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: 0.05em;
+        }
+        .countdown-timer span {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #64748b;
+            margin: 0 2px;
         }
 
         /* Event Modal */
         #event-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            display: none; /* Hidden by default */
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;
         }
         #event-modal {
-            background-color: white;
-            padding: 1.5rem 2rem;
-            border-radius: 0.75rem;
-            width: 100%;
-            max-width: 450px;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            background-color: white; padding: 1.5rem 2rem; border-radius: 0.75rem; width: 100%; max-width: 450px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
-        #event-modal h2 {
-            margin-top: 0;
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-            color: #475569;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.375rem;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-        .form-group .time-inputs {
-            display: flex;
-            gap: 0.5rem;
-        }
-         .weekday-checkboxes {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        .weekday-checkboxes label {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 2rem;
-            height: 2rem;
-            border-radius: 9999px;
-            border: 1px solid #d1d5db;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.875rem;
-        }
-        .weekday-checkboxes input {
-            display: none; /* Hide actual checkbox */
-        }
-        .weekday-checkboxes input:checked + label {
-            background-color: #2563eb;
-            color: white;
-            border-color: #2563eb;
-        }
-        .modal-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1.5rem;
-        }
-        .modal-btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 0.375rem;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background-color 0.2s;
-        }
-        .btn-save {
-            background-color: #2563eb;
-            color: white;
-        }
-        .btn-save:hover {
-            background-color: #1d4ed8;
-        }
-        .btn-cancel {
-            background-color: #f1f5f9;
-            color: #475569;
-        }
-        .btn-cancel:hover {
-            background-color: #e2e8f0;
-        }
-        .btn-delete {
-            background-color: transparent;
-            color: #ef4444;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-        }
-         .btn-delete:hover {
-            text-decoration: underline;
-        }
+        #event-modal h2 { margin-top: 0; font-size: 1.25rem; font-weight: 600; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; color: #475569; }
+        .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; font-size: 1rem; box-sizing: border-box; }
+        .form-group .time-inputs { display: flex; gap: 0.5rem; }
+        .weekday-checkboxes { display: flex; justify-content: center; gap: 0.5rem; }
+        .weekday-checkboxes label { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 9999px; border: 1px solid #d1d5db; cursor: pointer; transition: all 0.2s; font-size: 0.875rem; }
+        .weekday-checkboxes input { display: none; }
+        .weekday-checkboxes input:checked + label { background-color: #2563eb; color: white; border-color: #2563eb; }
+        .modal-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
+        .modal-btn { padding: 0.6rem 1.2rem; border-radius: 0.375rem; border: none; cursor: pointer; font-weight: 600; transition: background-color 0.2s; }
+        .btn-save { background-color: #2563eb; color: white; }
+        .btn-save:hover { background-color: #1d4ed8; }
+        .btn-cancel { background-color: #f1f5f9; color: #475569; }
+        .btn-cancel:hover { background-color: #e2e8f0; }
+        .btn-delete { background-color: transparent; color: #ef4444; border: none; cursor: pointer; font-weight: 500; }
+        .btn-delete:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -296,23 +232,28 @@
                 <button id="today-btn" class="nav-btn today">Today</button>
             </nav>
         </header>
-        <!-- Body -->
-        <div class="calendar-body">
-            <!-- Timeline Column -->
-            <div id="timeline" class="timeline-column">
-                <!-- Times will be generated here -->
-            </div>
-            <!-- Grid Column -->
-            <div id="grid-column" class="grid-column calendar-grid">
-                <div id="events-container">
-                    <!-- Events will be placed here -->
-                </div>
-                <!-- Current Time Indicator -->
-                <div id="current-time-indicator" style="display: none;">
-                    <div class="time-indicator-dot"></div>
-                    <div class="time-indicator-line"></div>
+        <!-- Body Wrapper -->
+        <div class="calendar-wrapper">
+            <!-- Main Calendar Body -->
+            <div class="calendar-body">
+                <!-- Timeline Column -->
+                <div id="timeline" class="timeline-column"></div>
+                <!-- Grid Column -->
+                <div id="grid-column" class="grid-column calendar-grid">
+                    <div id="events-container"></div>
+                    <div id="current-time-indicator" style="display: none;">
+                        <div class="time-indicator-dot"></div>
+                        <div class="time-indicator-line"></div>
+                    </div>
                 </div>
             </div>
+            <!-- Widget Panel -->
+            <aside class="widget-panel">
+                <div class="widget-box">
+                    <h3 id="countdown-title">Next Break In</h3>
+                    <div id="countdown-timer" class="countdown-timer">--:--:--</div>
+                </div>
+            </aside>
         </div>
     </div>
 
@@ -348,7 +289,7 @@
                         <option value="event-orange">Orange</option>
                     </select>
                 </div>
-                 <!-- Recurrence Fields -->
+                <!-- Recurrence Fields -->
                 <div class="form-group">
                     <label for="event-recurrence">Repeats</label>
                     <select id="event-recurrence">
