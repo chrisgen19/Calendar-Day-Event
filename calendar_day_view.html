@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day View Calendar</title>
+    <style>
+        /* Base styles */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Main container */
+        .calendar-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 2rem auto;
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .calendar-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-date-info .year {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        .header-date-info .date {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-btn {
+            background-color: transparent;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-btn:hover {
+            background-color: #f1f5f9;
+        }
+        .nav-btn.today {
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+        }
+        .nav-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            stroke: #64748b;
+            stroke-width: 2;
+        }
+        
+        /* Body */
+        .calendar-body {
+            display: flex;
+            flex-grow: 1;
+            min-height: 80vh;
+            position: relative;
+        }
+        
+        /* Timeline */
+        .timeline-column {
+            width: 4rem;
+            padding-right: 0.5rem;
+            text-align: right;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        /* Grid */
+        .grid-column {
+            flex-grow: 1;
+            border-left: 1px solid #e2e8f0;
+            position: relative;
+            cursor: pointer;
+        }
+        .calendar-grid {
+             background-image:
+                linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+            /* Line every 60px (30 minutes * 2px/min) */
+            background-size: 100% 60px;
+        }
+
+        /* Events */
+        #events-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to pass through to the grid */
+        }
+        .event-item {
+            position: absolute;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            overflow: hidden;
+            border-left: 4px solid;
+            font-size: 0.8rem;
+            z-index: 5;
+            cursor: pointer;
+            pointer-events: auto; /* Re-enable pointer events for events themselves */
+        }
+        .event-title {
+            font-weight: 600;
+            margin: 0;
+        }
+        .event-time {
+            opacity: 0.8;
+            margin: 0;
+        }
+        
+        /* Event Colors - Subtle Palette */
+        .event-blue { background-color: #dbeafe; border-color: #3b82f6; color: #1e40af; }
+        .event-red { background-color: #fee2e2; border-color: #ef4444; color: #991b1b; }
+        .event-yellow { background-color: #fef9c3; border-color: #f59e0b; color: #854d0e; }
+        .event-purple { background-color: #f3e8ff; border-color: #8b5cf6; color: #5b21b6; }
+        .event-green { background-color: #dcfce7; border-color: #22c55e; color: #166534; }
+        .event-orange { background-color: #ffedd5; border-color: #f97316; color: #9a3412; }
+
+        /* Time Indicator */
+        #current-time-indicator {
+            position: absolute;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .time-indicator-dot {
+            width: 0.625rem;
+            height: 0.625rem;
+            background-color: #ef4444;
+            border-radius: 9999px;
+            margin-left: -5px;
+            z-index: 20;
+        }
+        .time-indicator-line {
+            width: 100%;
+            height: 2px;
+            background-color: #ef4444;
+        }
+
+        /* Event Modal */
+        #event-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #event-modal {
+            background-color: white;
+            padding: 1.5rem 2rem;
+            border-radius: 0.75rem;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        #event-modal h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #475569;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .form-group .time-inputs {
+            display: flex;
+            gap: 0.5rem;
+        }
+         .weekday-checkboxes {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .weekday-checkboxes label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            border: 1px solid #d1d5db;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+        .weekday-checkboxes input {
+            display: none; /* Hide actual checkbox */
+        }
+        .weekday-checkboxes input:checked + label {
+            background-color: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+        }
+        .modal-btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-save {
+            background-color: #2563eb;
+            color: white;
+        }
+        .btn-save:hover {
+            background-color: #1d4ed8;
+        }
+        .btn-cancel {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+        .btn-cancel:hover {
+            background-color: #e2e8f0;
+        }
+        .btn-delete {
+            background-color: transparent;
+            color: #ef4444;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+         .btn-delete:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="calendar-container">
+        <!-- Header -->
+        <header class="calendar-header">
+            <div class="header-date-info">
+                <p id="current-year" class="year">2024</p>
+                <h1 id="current-date" class="date">Monday, September 2</h1>
+            </div>
+            <nav class="header-nav">
+                <button id="prev-day" class="nav-btn">
+                     <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button id="next-day" class="nav-btn">
+                    <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </button>
+                <button id="today-btn" class="nav-btn today">Today</button>
+            </nav>
+        </header>
+        <!-- Body -->
+        <div class="calendar-body">
+            <!-- Timeline Column -->
+            <div id="timeline" class="timeline-column">
+                <!-- Times will be generated here -->
+            </div>
+            <!-- Grid Column -->
+            <div id="grid-column" class="grid-column calendar-grid">
+                <div id="events-container">
+                    <!-- Events will be placed here -->
+                </div>
+                <!-- Current Time Indicator -->
+                <div id="current-time-indicator" style="display: none;">
+                    <div class="time-indicator-dot"></div>
+                    <div class="time-indicator-line"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div id="event-modal-overlay">
+        <div id="event-modal">
+            <h2 id="modal-title">Add Event</h2>
+            <form id="event-form">
+                <input type="hidden" id="event-id">
+                <div class="form-group">
+                    <label for="event-title-input">Title</label>
+                    <input type="text" id="event-title-input" required>
+                </div>
+                <div class="form-group">
+                     <label for="event-date-input">Date</label>
+                     <input type="date" id="event-date-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Start & End Time</label>
+                    <div class="time-inputs">
+                        <input type="time" id="event-start-time-input" required>
+                        <input type="time" id="event-end-time-input" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="event-color-input">Color</label>
+                    <select id="event-color-input">
+                        <option value="event-blue">Blue</option>
+                        <option value="event-red">Red</option>
+                        <option value="event-yellow">Yellow</option>
+                        <option value="event-purple">Purple</option>
+                        <option value="event-green">Green</option>
+                        <option value="event-orange">Orange</option>
+                    </select>
+                </div>
+                 <!-- Recurrence Fields -->
+                <div class="form-group">
+                    <label for="event-recurrence">Repeats</label>
+                    <select id="event-recurrence">
+                        <option value="none">Does not repeat</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                </div>
+                <div id="weekly-recurrence-options" class="form-group" style="display: none;">
+                    <label>Repeat on</label>
+                    <div class="weekday-checkboxes">
+                        <input type="checkbox" id="weekday-sun" value="0"><label for="weekday-sun">S</label>
+                        <input type="checkbox" id="weekday-mon" value="1"><label for="weekday-mon">M</label>
+                        <input type="checkbox" id="weekday-tue" value="2"><label for="weekday-tue">T</label>
+                        <input type="checkbox" id="weekday-wed" value="3"><label for="weekday-wed">W</label>
+                        <input type="checkbox" id="weekday-thu" value="4"><label for="weekday-thu">T</label>
+                        <input type="checkbox" id="weekday-fri" value="5"><label for="weekday-fri">F</label>
+                        <input type="checkbox" id="weekday-sat" value="6"><label for="weekday-sat">S</label>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="delete-event-btn" class="btn-delete">Delete</button>
+                    <div>
+                        <button type="button" id="cancel-event-btn" class="modal-btn btn-cancel">Cancel</button>
+                        <button type="submit" class="modal-btn btn-save">Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="calendar.js"></script>
+</body>
+</html>
+
